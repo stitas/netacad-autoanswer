@@ -42,11 +42,11 @@ function isElementDisplayedInComposedTree(element) {
   return true;
 }
 
-function getCurrentMcqViewElement(mcqViewElements) {
-  const visibleMcqViews = mcqViewElements
-    .map((mcqView) => ({
-      element: mcqView,
-      visibleArea: getVisibleArea(mcqView),
+function getCurrentQuestionViewElement(questionViewElements) {
+  const visibleQuestionViews = questionViewElements
+    .map((questionView) => ({
+      element: questionView,
+      visibleArea: getVisibleArea(questionView),
     }))
     .filter(
       ({ element, visibleArea }) =>
@@ -54,18 +54,18 @@ function getCurrentMcqViewElement(mcqViewElements) {
     )
     .sort((a, b) => b.visibleArea - a.visibleArea);
 
-  if (visibleMcqViews.length === 0) return null;
+  if (visibleQuestionViews.length === 0) return null;
 
-  return visibleMcqViews[0].element;
+  return visibleQuestionViews[0].element;
 }
 
-function findMcqViewElements() {
-  const mcqViewElements = [];
+function findQuestionViewElements() {
+  const questionViewElements = [];
 
   const appRoot = document.querySelector("app-root");
   const pageView = appRoot?.shadowRoot?.querySelector("page-view");
   if (!pageView?.shadowRoot) {
-    return mcqViewElements;
+    return questionViewElements;
   }
 
   pageView.shadowRoot
@@ -74,20 +74,24 @@ function findMcqViewElements() {
       articleView.shadowRoot
         ?.querySelectorAll("block-view")
         .forEach((blockView) => {
-          const mcqView = blockView.shadowRoot?.querySelector("mcq-view");
-          if (mcqView) mcqViewElements.push(mcqView);
+          const questionView = blockView.shadowRoot?.querySelector(
+            "mcq-view, object-matching-view"
+          );
+          if (questionView) questionViewElements.push(questionView);
         });
     });
 
-  return mcqViewElements;
+  return questionViewElements;
 }
 
 async function scrapeData(currentAttempt = 1) {
   const storedData = await chrome.storage.sync.get(["aiApiKey"]);
   const apiKey = storedData.aiApiKey;
-  const currentMcqViewElement = getCurrentMcqViewElement(findMcqViewElements());
+  const currentQuestionViewElement = getCurrentQuestionViewElement(
+    findQuestionViewElements()
+  );
 
-  if (!currentMcqViewElement) {
+  if (!currentQuestionViewElement) {
     if (currentAttempt < MAX_SCRAPE_ATTEMPTS) {
       setTimeout(() => {
         window.scrapeData && window.scrapeData(currentAttempt + 1);
@@ -101,5 +105,5 @@ async function scrapeData(currentAttempt = 1) {
     return false;
   }
 
-  return processSingleQuestion(currentMcqViewElement, apiKey);
+  return processQuestionView(currentQuestionViewElement, apiKey);
 } 

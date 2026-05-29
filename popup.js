@@ -3,6 +3,14 @@ document.addEventListener("DOMContentLoaded", () => {
   const saveKeyButton = document.getElementById("saveKey");
   const statusDiv = document.getElementById("status");
 
+  if (
+    !(apiKeyInput instanceof HTMLInputElement) ||
+    !(saveKeyButton instanceof HTMLButtonElement) ||
+    !statusDiv
+  ) {
+    return;
+  }
+
   chrome.storage.sync.get(["aiApiKey"], (result) => {
     if (result.aiApiKey) {
       apiKeyInput.value = result.aiApiKey;

@@ -43,8 +43,6 @@ async function callOpenAi(prompt, apiKey, imageDataUrls = []) {
         ]
       : prompt;
 
-  console.log(input)
-
   const response = await fetch(API_URL, {
     method: "POST",
     headers: {
@@ -82,6 +80,48 @@ async function callOpenAi(prompt, apiKey, imageDataUrls = []) {
   }
 
   return { text };
+}
+
+async function getAiMatchingAnswer(
+  question,
+  categories,
+  options,
+  apiKey,
+  imageDataUrls = [],
+) {
+  if (!apiKey) {
+    return "Error: OpenAI API Key not available. Please set it in the extension popup.";
+  }
+
+  let prompt = `Given the following matching question, match each category item to exactly one option item.
+Return only valid JSON. Do not include Markdown, explanations, comments, or any extra text.
+Return a JSON array of objects in this exact shape:
+[{"category":"exact category text","option":"exact option text"}]
+Use only category text from the Categories list below.
+Use only option text from the Options list below.
+Copy category and option text exactly as written.
+If image descriptions or images are provided, use them as part of the question context.
+
+Question:
+${question}
+
+Categories:
+`;
+  categories.forEach((category) => {
+    prompt += `${category}\n`;
+  });
+
+  prompt += "\nOptions:\n";
+  options.forEach((option) => {
+    prompt += `${option}\n`;
+  });
+
+  try {
+    const result = await callOpenAi(prompt, apiKey, imageDataUrls);
+    return result.error || result.text;
+  } catch (error) {
+    return "Error connecting to OpenAI API. Check console for details.";
+  }
 }
 
 async function getAiAnswer(question, answers, apiKey, imageDataUrls = []) {
