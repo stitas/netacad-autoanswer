@@ -26,7 +26,25 @@ function extractOpenAiResponseText(data) {
   return "";
 }
 
-async function callOpenAi(prompt, apiKey) {
+async function callOpenAi(prompt, apiKey, imageDataUrls = []) {
+  const input =
+    imageDataUrls.length > 0
+      ? [
+          {
+            role: "user",
+            content: [
+              { type: "input_text", text: prompt },
+              ...imageDataUrls.map((imageUrl) => ({
+                type: "input_image",
+                image_url: imageUrl,
+              })),
+            ],
+          },
+        ]
+      : prompt;
+
+  console.log(input)
+
   const response = await fetch(API_URL, {
     method: "POST",
     headers: {
@@ -35,7 +53,7 @@ async function callOpenAi(prompt, apiKey) {
     },
     body: JSON.stringify({
       model: OPENAI_MODEL,
-      input: prompt,
+      input: input,
     }),
   });
 
@@ -66,7 +84,7 @@ async function callOpenAi(prompt, apiKey) {
   return { text };
 }
 
-async function getAiAnswer(question, answers, apiKey) {
+async function getAiAnswer(question, answers, apiKey, imageDataUrls = []) {
   if (!apiKey) {
     return "Error: OpenAI API Key not available. Please set it in the extension popup.";
   }
@@ -77,6 +95,7 @@ Otherwise, if it's a single-choice question, return only the text of the single 
 Return only answer text that appears in the Possible Answers list below.
 Copy the answer text exactly as it is written in the Possible Answers list.
 Do not include answer numbers, bullets, prefixes, explanations, punctuation you were not given, or any extra text.
+If image descriptions or images are provided, use them as part of the question context.
 
 Question:
 ${question}
@@ -88,7 +107,7 @@ Possible Answers:
   });
 
   try {
-    const result = await callOpenAi(prompt, apiKey);
+    const result = await callOpenAi(prompt, apiKey, imageDataUrls);
     return result.error || result.text;
   } catch (error) {
     return "Error connecting to OpenAI API. Check console for details.";
